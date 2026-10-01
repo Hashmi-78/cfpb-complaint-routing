@@ -2,6 +2,8 @@
 
 An end-to-end NLP project on the **CFPB Consumer Complaint Database**: automatically route a consumer's complaint narrative to the right product team, and detect emerging complaint trends before they become crises.
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Hashmi-78/cfpb-complaint-routing/blob/main/CFPB_01_data_and_eda.ipynb)
+
 > **Status:** Phase 1 (data & EDA) complete · Phase 2 (baseline routing model) up next
 
 ## Why this project
@@ -20,7 +22,7 @@ Financial institutions receive thousands of free-text complaints a day. Routing 
 
 **Data provenance note:** In September 2026 the CFPB stopped publishing consumer complaint narratives; the official export no longer contains the narrative column. This project therefore uses an archived snapshot taken before the change. The structured fields (product, issue, company, state, dates) are still published live and remain usable for trend monitoring.
 
-## Phase 1 findings ([notebook](notebooks/01_data_and_eda.ipynb))
+## Phase 1 findings ([notebook](CFPB_01_data_and_eda.ipynb))
 - **Heavy class imbalance:** credit reporting is 60% of complaints; the smallest team (personal/payday loans) is 1.2% → evaluate with macro-F1, use class weights.
 - **~32% duplicate narratives:** many complaints are near-identical template letters (largely credit-reporting disputes). Deduplication must happen *before* the train/test split to avoid leakage.
 - **Length:** median 126 words; ~10% exceed 400 words (≈ BERT's 512-token limit).
@@ -36,8 +38,7 @@ Financial institutions receive thousands of free-text complaints a day. Routing 
 
 ## Repository structure
 ```
-notebooks/
-  01_data_and_eda.ipynb      # Phase 1: data, label mapping, EDA
+CFPB_01_data_and_eda.ipynb   # Phase 1: data, label mapping, EDA
 requirements.txt
 ```
 
