@@ -2,9 +2,9 @@
 
 An end-to-end NLP project on the **CFPB Consumer Complaint Database**: automatically route a consumer's complaint narrative to the right product team, and detect emerging complaint trends before they become crises.
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Hashmi-78/cfpb-complaint-routing/blob/main/CFPB_01_data_and_eda.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Hashmi-78/cfpb-complaint-routing/blob/main/CFPB_01_data_and_eda.ipynb) [![Phase 2 on Kaggle](https://img.shields.io/badge/Phase%202-Kaggle-20BEFF?logo=kaggle&logoColor=white)](https://www.kaggle.com/code/muhammadumarusman/cfpb-02-tf-idf-baseline-complaint-router)
 
-> **Status:** Phase 1 (data & EDA) complete · Phase 2 (baseline routing model) up next
+> **Status:** Phase 1 (data & EDA) and Phase 2 (TF-IDF baseline router) complete · Phase 3 (transformer) up next
 
 ## Why this project
 Financial institutions receive thousands of free-text complaints a day. Routing them by hand is slow and inconsistent, and spikes in a particular issue (a broken app release, a billing error, a predatory collector) are often spotted late. This project builds:
@@ -29,9 +29,26 @@ Financial institutions receive thousands of free-text complaints a day. Routing 
 - **Label drift:** CFPB renamed product categories over time; 14 raw product labels are mapped to 9 stable routing teams.
 - **Trends:** credit-reporting complaints with narratives rose steadily to a peak in early 2025, then fell sharply in late 2025; a sharp prepaid/money-transfer spike in Jan 2025 is a useful test case for trend detection.
 
+## Phase 2 results — TF-IDF baseline router ([notebook](CFPB_02_baseline_router.ipynb) · [run with outputs on Kaggle](https://www.kaggle.com/code/muhammadumarusman/cfpb-02-tf-idf-baseline-complaint-router))
+Time-based split: train 2020–2024, validate Jan–Jun 2025, **test Jul 2025–Jul 2026** (60,546 complaints, never seen during tuning).
+
+| Model (validation) | Macro-F1 |
+|---|---|
+| Complement Naive Bayes | 0.619 |
+| Logistic Regression | 0.707 |
+| **Linear SVM** (C=0.25, class-balanced) | **0.752** |
+
+**Test set (Linear SVM, refit on train+validation):** macro-F1 **0.781** · accuracy **0.841** · weighted-F1 0.839
+
+- **Best teams:** Credit reporting (F1 0.91), Mortgage (0.89). **Hardest:** Personal/payday loans (0.59) and Prepaid/money transfer (0.72) — the smallest, most overlapping classes.
+- **Concept drift is real:** credit reporting falls from 62% of training data to 48% of the test window, while debt collection rises from 12% to 17%.
+- **Main confusion:** debt collection → credit reporting (2,199 cases). Many collection complaints are really disputes about credit-report entries, so the label itself is ambiguous.
+- **Shortcut learning:** the top features per team include company names (Equifax/Experian/TransUnion, Chime, Synchrony, Coinbase/Zelle, Mohela/Navient). The model partly routes by *who* the complaint is about rather than *what* the problem is — a key thing to test against in Phase 3.
+- **Confidence-based routing:** auto-routing only predictions with a decision margin ≥ 1.26 covers **55% of complaints at 95.3% accuracy**; the rest go to a human triage queue.
+
 ## Roadmap
 - [x] **Phase 1** — Data acquisition, label cleaning, EDA
-- [ ] **Phase 2** — Baseline routing: TF-IDF + Logistic Regression / Linear SVM, time-based split, macro-F1
+- [x] **Phase 2** — Baseline routing: TF-IDF + Logistic Regression / Linear SVM, time-based split, macro-F1
 - [ ] **Phase 3** — Transformer fine-tuning (DistilBERT) and comparison with the baseline
 - [ ] **Phase 4** — Trend detection: volume anomaly detection + topic modelling (BERTopic) for emerging issues
 - [ ] **Phase 5** — Serve the router as an API and build a simple monitoring dashboard
@@ -39,11 +56,12 @@ Financial institutions receive thousands of free-text complaints a day. Routing 
 ## Repository structure
 ```
 CFPB_01_data_and_eda.ipynb   # Phase 1: data, label mapping, EDA
+CFPB_02_baseline_router.ipynb  # Phase 2: TF-IDF baselines, time-based evaluation, routing policy
 requirements.txt
 ```
 
 ## Running it
-The notebooks are designed for Google Colab. Open a notebook, run all cells, and grant Google Drive access when prompted — the processed sample (`cfpb_sample.parquet`) is saved to `MyDrive/cfpb-complaint-routing/` for later phases.
+Phase 1 is designed for Google Colab (grant Google Drive access when prompted; the processed sample is saved to `MyDrive/cfpb-complaint-routing/`). Phase 2 runs on **Kaggle Notebooks** (CPU, Internet on) and is self-contained: it rebuilds the Phase 1 sample from the archived snapshot with the same seed, reproducing it row-for-row.
 
 ## Author
 **Muhammad Umar Usman Hashmi** · [GitHub](https://github.com/Hashmi-78) · [LinkedIn](https://www.linkedin.com/in/muhammad-umar-usman-hashmi-4a34002b8)
