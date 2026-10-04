@@ -4,7 +4,7 @@ An end-to-end NLP project on the **CFPB Consumer Complaint Database**: automatic
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Hashmi-78/cfpb-complaint-routing/blob/main/CFPB_01_data_and_eda.ipynb) [![Phase 2 on Kaggle](https://img.shields.io/badge/Phase%202-Kaggle-20BEFF?logo=kaggle&logoColor=white)](https://www.kaggle.com/code/muhammadumarusman/cfpb-02-tf-idf-baseline-complaint-router)
 
-> **Status:** Phase 1 (data & EDA) and Phase 2 (TF-IDF baseline router) complete · Phase 3 (transformer) up next
+> **Status:** Phases 1–3 complete (data & EDA, TF-IDF baseline, fine-tuned transformer) · Phase 4 (trend detection) up next
 
 ## Why this project
 Financial institutions receive thousands of free-text complaints a day. Routing them by hand is slow and inconsistent, and spikes in a particular issue (a broken app release, a billing error, a predatory collector) are often spotted late. This project builds:
@@ -46,10 +46,24 @@ Time-based split: train 2020–2024, validate Jan–Jun 2025, **test Jul 2025–
 - **Shortcut learning:** the top features per team include company names (Equifax/Experian/TransUnion, Chime, Synchrony, Coinbase/Zelle, Mohela/Navient). The model partly routes by *who* the complaint is about rather than *what* the problem is — a key thing to test against in Phase 3.
 - **Confidence-based routing:** auto-routing only predictions with a decision margin ≥ 1.26 covers **55% of complaints at 95.3% accuracy**; the rest go to a human triage queue.
 
+## Phase 3 results — fine-tuned transformer router ([notebook with outputs](CFPB_03_transformer_router.ipynb))
+**DistilRoBERTa** (82M params) fine-tuned for 2 epochs on a Kaggle T4×2 GPU (~35 min): class-weighted loss (∝ 1/√freq), fp16, length-bucketed batches, max 256 tokens. For a fair comparison the TF-IDF + SVM baseline was **re-fit on the same 2020–2024 training window** (so its test score here is 0.773, not Phase 2's 0.781, which also used the validation window).
+
+| Test window (Jul 2025–Jul 2026) | Macro-F1 | Accuracy | Macro-F1, company names masked |
+|---|---|---|---|
+| TF-IDF + Linear SVM | 0.773 | 0.834 | 0.734 |
+| **DistilRoBERTa** | **0.791** | **0.843** | **0.755** |
+
+- **Better on every team, most on the small, ambiguous ones:** Personal/payday loans +0.050 F1 (0.578 → 0.628), Prepaid/money transfer +0.030, Debt collection +0.019, Bank account +0.016.
+- **Fewer errors on the hardest confusion:** debt collection → credit reporting drops from 2,478 to 2,109 (−15%); prepaid → bank account from 835 to 691 (−17%).
+- **More automation:** at ≥95% accuracy the transformer can auto-route **60%** of complaints vs 50% for the SVM.
+- **Shortcut test — an honest negative result:** masking company names (45% of test complaints contain one) costs both models about the same (macro-F1 −0.039 SVM vs −0.036 transformer; accuracy on name-bearing complaints falls to 0.821 for both). The transformer is better overall, but it does **not** rely meaningfully less on company names. Training with names masked (data augmentation) is a natural next experiment.
+- **Trade-off:** +0.018 macro-F1 for ~35 GPU-minutes of training and a GPU (or slower CPU) at inference, versus ~5 CPU-minutes for the SVM. The SVM remains a strong, cheap fallback.
+
 ## Roadmap
 - [x] **Phase 1** — Data acquisition, label cleaning, EDA
 - [x] **Phase 2** — Baseline routing: TF-IDF + Logistic Regression / Linear SVM, time-based split, macro-F1
-- [ ] **Phase 3** — Transformer fine-tuning (DistilBERT) and comparison with the baseline
+- [x] **Phase 3** — Transformer fine-tuning (DistilRoBERTa) and comparison with the baseline
 - [ ] **Phase 4** — Trend detection: volume anomaly detection + topic modelling (BERTopic) for emerging issues
 - [ ] **Phase 5** — Serve the router as an API and build a simple monitoring dashboard
 
@@ -57,11 +71,12 @@ Time-based split: train 2020–2024, validate Jan–Jun 2025, **test Jul 2025–
 ```
 CFPB_01_data_and_eda.ipynb   # Phase 1: data, label mapping, EDA
 CFPB_02_baseline_router.ipynb  # Phase 2: TF-IDF baselines, time-based evaluation, routing policy
+CFPB_03_transformer_router.ipynb  # Phase 3: fine-tuned DistilRoBERTa vs baseline, shortcut test
 requirements.txt
 ```
 
 ## Running it
-Phase 1 is designed for Google Colab (grant Google Drive access when prompted; the processed sample is saved to `MyDrive/cfpb-complaint-routing/`). Phase 2 runs on **Kaggle Notebooks** (CPU, Internet on) and is self-contained: it rebuilds the Phase 1 sample from the archived snapshot with the same seed, reproducing it row-for-row.
+Phase 1 is designed for Google Colab (grant Google Drive access when prompted; the processed sample is saved to `MyDrive/cfpb-complaint-routing/`). Phases 2 and 3 run on **Kaggle Notebooks** (Internet on; Phase 3 needs a GPU) and are self-contained: it rebuilds the Phase 1 sample from the archived snapshot with the same seed, reproducing it row-for-row.
 
 ## Author
 **Muhammad Umar Usman Hashmi** · [GitHub](https://github.com/Hashmi-78) · [LinkedIn](https://www.linkedin.com/in/muhammad-umar-usman-hashmi-4a34002b8)
