@@ -2,7 +2,7 @@
 
 An end-to-end NLP project on the **CFPB Consumer Complaint Database**: automatically route a consumer's complaint narrative to the right product team, and detect emerging complaint trends before they become crises.
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Hashmi-78/cfpb-complaint-routing/blob/main/CFPB_01_data_and_eda.ipynb) [![Phase 2 on Kaggle](https://img.shields.io/badge/Phase%202-Kaggle-20BEFF?logo=kaggle&logoColor=white)](https://www.kaggle.com/code/muhammadumarusman/cfpb-02-tf-idf-baseline-complaint-router)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Hashmi-78/cfpb-complaint-routing/blob/main/CFPB_01_data_and_eda.ipynb) [![Phase 2 on Kaggle](https://img.shields.io/badge/Phase%202-Kaggle-20BEFF?logo=kaggle&logoColor=white)](https://www.kaggle.com/code/muhammadumarusman/cfpb-02-tf-idf-baseline-complaint-router) [![Phase 3 on Kaggle](https://img.shields.io/badge/Phase%203-Kaggle-20BEFF?logo=kaggle&logoColor=white)](https://www.kaggle.com/code/muhammadumarusman/cfpb-03-transformer-complaint-router)
 
 > **Status:** Phases 1–3 complete (data & EDA, TF-IDF baseline, fine-tuned transformer) · Phase 4 (trend detection) up next
 
@@ -46,7 +46,7 @@ Time-based split: train 2020–2024, validate Jan–Jun 2025, **test Jul 2025–
 - **Shortcut learning:** the top features per team include company names (Equifax/Experian/TransUnion, Chime, Synchrony, Coinbase/Zelle, Mohela/Navient). The model partly routes by *who* the complaint is about rather than *what* the problem is — a key thing to test against in Phase 3.
 - **Confidence-based routing:** auto-routing only predictions with a decision margin ≥ 1.26 covers **55% of complaints at 95.3% accuracy**; the rest go to a human triage queue.
 
-## Phase 3 results — fine-tuned transformer router ([notebook with outputs](CFPB_03_transformer_router.ipynb))
+## Phase 3 results — fine-tuned transformer router ([notebook with outputs](CFPB_03_transformer_router.ipynb) · [run on Kaggle](https://www.kaggle.com/code/muhammadumarusman/cfpb-03-transformer-complaint-router))
 **DistilRoBERTa** (82M params) fine-tuned for 2 epochs on a Kaggle T4×2 GPU (~35 min): class-weighted loss (∝ 1/√freq), fp16, length-bucketed batches, max 256 tokens. For a fair comparison the TF-IDF + SVM baseline was **re-fit on the same 2020–2024 training window** (so its test score here is 0.773, not Phase 2's 0.781, which also used the validation window).
 
 | Test window (Jul 2025–Jul 2026) | Macro-F1 | Accuracy | Macro-F1, company names masked |
